@@ -357,6 +357,29 @@ class JUnitPlatformProviderTests {
 
 		testExecutionOfMatchingTestMethods(TestClass3.class, pattern, "prefix1Suffix1()", "prefix1Suffix2()");
 	}
+	
+	@Test
+	void testAsTychoDoesStartProvider() throws ReporterException, InvocationTargetException, TestSetFailedException {
+		Map<String, String> map = new HashMap();
+		map.put("tc.1", MyTest.class.getCanonicalName());
+		URL loc = this.getClass().getProtectionDomain().getCodeSource().getLocation();
+		
+		BaseProviderFactory providerParameters = new BaseProviderFactory(mock(ReporterFactory.class), false);
+		providerParameters.setProviderProperties(map);
+		File testClassesDirectory = new File(loc.getFile());
+		providerParameters.setDirectoryScannerParameters(new DirectoryScannerParameters(testClassesDirectory, Collections.EMPTY_LIST, Collections.EMPTY_LIST, Collections.EMPTY_LIST, false, "filesystem"));
+		providerParameters.setTestRequest(new TestRequest(Collections.emptyList(), testClassesDirectory, TestListResolver.getEmptyTestListResolver()));
+		providerParameters.setRunOrderParameters(RunOrderParameters.alphabetical());
+		TestPlanSummaryListener executionListener = new TestPlanSummaryListener();
+		
+		Launcher launcher = LauncherFactory.create();
+		launcher.registerTestExecutionListeners(executionListener);
+
+		JUnitPlatformProvider provider = new JUnitPlatformProvider(providerParameters, launcher);
+		invokeProvider(provider, null);
+		TestExecutionSummary summary = executionListener.summaries.get(0);
+		assertEquals(1, summary.getTestsStartedCount());
+	}
 
 	void testExecutionOfMatchingTestMethods(Class<?> testClass, String pattern, String... expectedTestNames)
 			throws Exception {
